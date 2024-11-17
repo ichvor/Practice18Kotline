@@ -11,11 +11,12 @@ import android.widget.ListView
 import androidx.fragment.app.Fragment
 
 class FragmentAnimalList : Fragment() {
-    private var callback: OnAnimalSelectedListener? = null
 
-    // Interface to handle item selection
+    private var callback: OnAnimalSelectedListener? = null
+    private var items: Array<String>? = null
+
     interface OnAnimalSelectedListener {
-        fun onAnimalSelected(animal: String?)
+        fun onAnimalSelected(item: String?)
     }
 
     override fun onAttach(context: Context) {
@@ -23,39 +24,43 @@ class FragmentAnimalList : Fragment() {
         if (context is OnAnimalSelectedListener) {
             callback = context
         } else {
-            throw RuntimeException(
-                "$context must implement OnAnimalSelectedListener"
-            )
+            throw RuntimeException("$context must implement OnAnimalSelectedListener")
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        items = arguments?.getStringArray(ARG_ITEMS)
+            ?: arrayOf("Кошка", "Собака")
+    }
+
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        val view: View = inflater.inflate(R.layout.fragment_animal_list, container, false)
+        val view = inflater.inflate(R.layout.fragment_animal_list, container, false)
+        val listView: ListView = view.findViewById(R.id.animal_list_view)
 
-        val listView = view.findViewById<ListView>(R.id.animal_list_view)
-
-        // List of animals
-        val animals = arrayOf("Кошка", "Собака")
-
-        // Use the correct reference for the system layout
-        val adapter = ArrayAdapter(
-            requireContext(),
-            android.R.layout.simple_list_item_1, // Use system resource
-            animals
-        )
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, items!!)
         listView.adapter = adapter
 
-        // Handle item click
         listView.onItemClickListener =
             AdapterView.OnItemClickListener { _, _, position, _ ->
-                callback?.onAnimalSelected(animals[position])
+                callback?.onAnimalSelected(items!![position])
             }
 
         return view
+    }
+
+    companion object {
+        private const val ARG_ITEMS = "items"
+
+        fun newInstance(items: Array<String>): FragmentAnimalList {
+            val fragment = FragmentAnimalList()
+            val args = Bundle()
+            args.putStringArray(ARG_ITEMS, items)
+            fragment.arguments = args
+            return fragment
+        }
     }
 }
